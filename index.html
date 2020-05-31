@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Calculator</title>
+	<link rel = "stylesheet" href = "style.css">
+</head>
+<body>
+	<div class = "container">
+		<div class = "grid-container">
+			<div id = "display">0</div>
+			<div class = "button grid-item">/</div>
+			<div class = "button grid-item">7</div>
+			<div class = "button grid-item">8</div>
+			<div class = "button grid-item">9</div>
+			<div class = "button grid-item">*</div>
+			<div class = "button grid-item">4</div>
+			<div class = "button grid-item">5</div>
+			<div class = "button grid-item">6</div>
+			<div class = "button grid-item">-</div>
+			<div class = "button grid-item">1</div>
+			<div class = "button grid-item">2</div>
+			<div class = "button grid-item">3</div>
+			<div class = "button grid-item">+</div>
+			<div class = "button grid-item">0</div>
+			<div class = "button grid-item">C</div>
+			<div class = "button grid-item" id = "equal">=</div>
+		</div>
+	</div>
+
+	<script>
+		var operators = {
+			"+": function(a, b){return parseFloat(a) + parseFloat(b)},
+			"-": function(a, b){return parseFloat(a) - parseFloat(b)},
+			"*": function(a, b){return parseFloat(a) * parseFloat(b)},
+			"/": function(a, b){
+				if(b == 0){
+					return 0;
+				}
+				else{
+					return parseFloat(a) / parseFloat(b)
+				}
+			},
+		};
+
+
+		function operate(operator, a, b){
+			return operators[operator](a, b);
+		};
+
+		// store two numbers: previous number + current number
+		var currentNo = 0;
+		var previousNo = 0;
+		// store which operator was clicked on if any
+		var currentOperator = null;
+		// store total number so far
+		var totalNo = 0;
+		// store what to display
+		var displayNo = 0;
+
+		function computeTotal(){
+			// If first number inputted, return just that number
+			if(currentOperator == null){
+				return currentNo;
+			}
+			// If previous operator was * or /, need to calculate previous + current numbers and then add to total
+			else if(currentOperator == "*" || currentOperator == "/"){
+				return parseFloat(parseFloat(totalNo) + parseFloat(operate(currentOperator, previousNo, currentNo))).toFixed(2);
+			}
+
+			else{
+				return operate(currentOperator, totalNo, currentNo);
+			}			
+		}
+
+		var selectedGrid = document.getElementsByClassName("button");
+		for (i = 0; i < 16; i++){
+			// add eventListeners to all buttons. Note: total grid items is hard coded.
+			selectedGrid[i].addEventListener("click", function(){
+				// Clear: if clear button is clicked, clear everything
+				if(this.innerHTML == "C"){
+					currentNo = 0;
+					previousNo = 0;
+					currentOperator = null;
+					totalNo = 0;
+					displayNo = 0;
+				}
+
+				// Run if + or - operand was selected
+				else if(this.innerHTML == "+" || this.innerHTML == "-"){
+					// If operand was selected multiple times in a row, just store the latest operand
+					if (currentNo == null){
+						if(currentOperator == "*" || currentOperator == "/"){
+							totalNo = operate("+", totalNo, previousNo);
+							displayNo = previousNo;						
+						}
+						currentOperator = this.innerHTML;
+					}
+
+					else {
+						totalNo = computeTotal();
+						currentOperator = this.innerHTML;
+						previousNo = currentNo;
+						currentNo = null;
+						displayNo = totalNo;
+					}
+				}
+
+				// Run if * or / operand was selected
+				else if(this.innerHTML == "*" || this.innerHTML == "/"){
+					// If operand was selected multiple times in a row, just store the latest operand. If + or - was last selected, make sure those results are removed from total.
+					if(currentNo == null){
+						if(currentOperator == "+" || currentOperator == "-"){
+							totalNo = operate("-", totalNo, previousNo);
+							displayNo = previousNo;
+						}
+
+						currentOperator = this.innerHTML;
+					}
+
+					// If last operand selected was + or -, don't operate; just store operator.
+					else if(currentOperator == "+" || currentOperator == "-"){
+						// Need to make sure stored number carries over negatives
+						if(currentOperator == "+"){
+							previousNo = currentNo;
+						}
+						else{
+							previousNo = currentNo * -1;
+						}
+						currentOperator = this.innerHTML;
+						currentNo = null;					
+					}
+
+					// Compute values with previous operator selected and store the newly selected operator
+					else if (currentOperator != null){
+						totalNo = computeTotal();
+						displayNo = totalNo;
+						currentOperator = this.innerHTML;
+						previousNo = currentNo;
+						currentNo = null;
+					}
+					else{
+						currentOperator = this.innerHTML;
+						previousNo = currentNo;
+						currentNo = null;
+					}					
+				}
+
+				// Equal: show result when = is clicked
+				else if(this.innerHTML == "="){
+					// Check if trying to compute an invalid equation
+					if(currentNo != null){
+						currentNo = computeTotal();
+						displayNo = currentNo;
+						previousNo = null;
+						totalNo = 0;
+						currentOperator = null;
+					}
+				}
+
+				// Number input
+				else {
+					// Don't append to null
+					if (currentNo == null || currentNo == 0 || previousNo == null){
+						currentNo = this.innerHTML;
+					}
+					else{
+						currentNo = displayNo + this.innerHTML;
+					}
+					displayNo = currentNo;
+				}
+
+				document.getElementById("display").innerHTML = parseFloat(displayNo);	
+
+			});
+		}
+
+	</script>
+
+</body>
+</html>
