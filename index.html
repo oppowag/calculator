@@ -29,15 +29,15 @@
 
 	<script>
 		var operators = {
-			"+": function(a, b){return parseFloat(a) + parseFloat(b)},
-			"-": function(a, b){return parseFloat(a) - parseFloat(b)},
-			"*": function(a, b){return parseFloat(a) * parseFloat(b)},
+			"+": function(a, b){return a + b},
+			"-": function(a, b){return a - b},
+			"*": function(a, b){return a * b},
 			"/": function(a, b){
 				if(b == 0){
-					return 0;
+					return "Error";
 				}
 				else{
-					return parseFloat(a) / parseFloat(b)
+					return a / b;
 				}
 			},
 		};
@@ -49,13 +49,14 @@
 
 		// store two numbers: previous number + current number
 		var currentNo = 0;
-		var previousNo = 0;
+		var previousNo = null;
 		// store which operator was clicked on if any
 		var currentOperator = null;
 		// store total number so far
 		var totalNo = 0;
 		// store what to display
 		var displayNo = 0;
+		var computed = false;
 
 		function computeTotal(){
 			// If first number inputted, return just that number
@@ -64,12 +65,25 @@
 			}
 			// If previous operator was * or /, need to calculate previous + current numbers and then add to total
 			else if(currentOperator == "*" || currentOperator == "/"){
-				return parseFloat(parseFloat(totalNo) + parseFloat(operate(currentOperator, previousNo, currentNo))).toFixed(2);
+				var operateResult = operate(currentOperator, previousNo, currentNo);
+				if(operateResult != "Error"){
+					operateResult = totalNo + operateResult;
+				}
+				return operateResult;
 			}
 
 			else{
 				return operate(currentOperator, totalNo, currentNo);
 			}			
+		}
+
+		function clearAll(){
+			currentNo = 0;
+			previousNo = null;
+			currentOperator = null;
+			totalNo = 0;
+			displayNo = 0;
+			computed = false;			
 		}
 
 		var selectedGrid = document.getElementsByClassName("button");
@@ -78,17 +92,17 @@
 			selectedGrid[i].addEventListener("click", function(){
 				// Clear: if clear button is clicked, clear everything
 				if(this.innerHTML == "C"){
-					currentNo = 0;
-					previousNo = 0;
-					currentOperator = null;
-					totalNo = 0;
-					displayNo = 0;
+					clearAll();
 				}
 
 				// Run if + or - operand was selected
 				else if(this.innerHTML == "+" || this.innerHTML == "-"){
+					// Explictly don't support using operand to append number
+					if (previousNo == null){
+						// do nothing
+					}
 					// If operand was selected multiple times in a row, just store the latest operand
-					if (currentNo == null){
+					else if (currentNo == null){
 						if(currentOperator == "*" || currentOperator == "/"){
 							totalNo = operate("+", totalNo, previousNo);
 							displayNo = previousNo;						
@@ -107,8 +121,11 @@
 
 				// Run if * or / operand was selected
 				else if(this.innerHTML == "*" || this.innerHTML == "/"){
+					if (previousNo == null){
+						// do nothing
+					}
 					// If operand was selected multiple times in a row, just store the latest operand. If + or - was last selected, make sure those results are removed from total.
-					if(currentNo == null){
+					else if(currentNo == null){
 						if(currentOperator == "+" || currentOperator == "-"){
 							totalNo = operate("-", totalNo, previousNo);
 							displayNo = previousNo;
@@ -151,25 +168,36 @@
 					if(currentNo != null){
 						currentNo = computeTotal();
 						displayNo = currentNo;
-						previousNo = null;
+						previousNo = 0;
 						totalNo = 0;
 						currentOperator = null;
+						computed = true;
 					}
 				}
 
 				// Number input
 				else {
 					// Don't append to null
-					if (currentNo == null || currentNo == 0 || previousNo == null){
-						currentNo = this.innerHTML;
+					if (currentNo == null || currentNo == 0 || previousNo == null || computed == true){
+						currentNo = parseInt(this.innerHTML);
+						computed = false;
+						if(previousNo == null){
+							previousNo = 0;
+						}
 					}
 					else{
-						currentNo = displayNo + this.innerHTML;
+						currentNo = parseInt(displayNo + this.innerHTML);
 					}
 					displayNo = currentNo;
 				}
 
-				document.getElementById("display").innerHTML = parseFloat(displayNo);	
+				if(displayNo == "Error"){
+					document.getElementById("display").innerHTML = displayNo;
+					clearAll();	
+				}
+				else{
+					document.getElementById("display").innerHTML = parseFloat(displayNo.toFixed(2));
+				}	
 
 			});
 		}
